@@ -7,17 +7,33 @@ import java.util.Map;
 
 class Document {
     private final String id;
-    private final Map<String, Integer> termsFreq;
+    private final Map<String, Integer> bodyTermsFreq;
+    private final Map<String, Integer> titleTermsFreq;
+    private final Map<String, Integer> headerTermsFreq;
+    private final Map<String, Integer> urlTermsFreq;
     private final Integer totalTermsCount;
 
-    Document(String id, Map<String, Integer> termsFreq, Integer totalTermsCount) {
+    Document(String id,Integer totalTermsCount,Map<String , Integer> bodyTermsFreq , Map<String , Integer>titleTermsFreq,
+    Map<String,Integer> headerTermsFreq , Map<String,Integer> urlTermsFreq) {
         this.id = id;
         this.totalTermsCount = totalTermsCount;
-        this.termsFreq = termsFreq;
+        this.bodyTermsFreq = bodyTermsFreq;
+        this.titleTermsFreq = titleTermsFreq;
+        this.headerTermsFreq = headerTermsFreq;
+        this.urlTermsFreq = urlTermsFreq;
     }
 
-    public Integer getTermFreq(String term) {
-        return termsFreq.get(term);
+    public Integer getBodyTermFreq(String term) {
+        return bodyTermsFreq.get(term);
+    }
+    public Integer getTitleTermFreq(String term) {
+        return titleTermsFreq.get(term);
+    }
+    public Integer getHeaderTermFreq(String term) {
+        return headerTermsFreq.get(term);
+    }
+    public Integer getURLTermFreq(String term) {
+        return urlTermsFreq.get(term);
     }
 
     public Integer getTotalTermsCount() {
@@ -56,6 +72,8 @@ class ScoredDocument implements Comparable<ScoredDocument> {
     }
 }
 
+
+
 public class Ranker {
 
     Map<String, Integer> documentFrequencies; //term -> no documents containing it
@@ -77,12 +95,15 @@ public class Ranker {
     }
 
     public Double calculateTF(Document document, String term) {
-        double tf;
-        if (document.getTermFreq(term) == null || document.getTermFreq(term) <= 0 || document.getTotalTermsCount() == 0) {
-            return 0.0;
-        }
-        tf = 1 + Math.log10(document.getTermFreq(term));
-        return tf / document.getTotalTermsCount();
+        int titleFreq = document.getTitleTermFreq(term) != null ? document.getTitleTermFreq(term) : 0;
+        int headerFreq = document.getHeaderTermFreq(term) != null ? document.getHeaderTermFreq(term) : 0;
+        int bodyFreq = document.getBodyTermFreq(term) != null ? document.getBodyTermFreq(term) : 0;
+        int urlFreq = document.getURLTermFreq(term)!=null ? document.getURLTermFreq(term):0;
+
+        double weightedFreq = titleFreq * 10.0 + headerFreq * 5.0 +urlFreq* 5.0 + bodyFreq * 1.0;
+        if (weightedFreq == 0) return 0.0;
+
+        return (1 + Math.log10(weightedFreq)) / document.getTotalTermsCount();
     }
 
     public Double calculateIDF(String term) {
