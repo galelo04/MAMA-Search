@@ -50,5 +50,6 @@ public class Main {
         for (ScoredDocument scoredDocument : rankedDocuments) {
             System.out.println("Document ID: " + scoredDocument.getDocument().getId() + ", Score: " + scoredDocument.getScore());
         }
+        System.out.println("test new ruleset");
     }
 }
