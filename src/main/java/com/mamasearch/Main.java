@@ -1,5 +1,7 @@
 package com.mamasearch;
 
+
+import java.io.FileNotFoundException;
 import java.util.*;
 
 import static java.util.Map.entry;
@@ -62,8 +64,8 @@ public class Main {
 
         // Initialize Ranker
         Ranker ranker = new Ranker();
-        ranker.documentFrequencies = documentFrequencies;
-        ranker.totalNumberOfDocuments = totalNumberOfDocuments;
+        ranker.setDocumentFrequencies( documentFrequencies);
+        ranker.setTotalNumberOfDocuments(totalNumberOfDocuments);
 
         // Rank documents
         List<ScoredDocument> rankedDocuments = ranker.rankDocument(queryTerms, documents);
@@ -72,6 +74,13 @@ public class Main {
         for (ScoredDocument scoredDocument : rankedDocuments) {
             System.out.println("Document ID: " + scoredDocument.getDocument().getId() + ", Score: " + scoredDocument.getScore());
         }
-        System.out.println("test new ruleset");
+
+
+        try {
+            ranker.rankPages();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

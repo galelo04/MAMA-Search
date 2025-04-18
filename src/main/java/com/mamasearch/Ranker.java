@@ -1,9 +1,11 @@
 package com.mamasearch;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.*;
 
 class Document {
     private final String id;
@@ -72,12 +74,79 @@ class ScoredDocument implements Comparable<ScoredDocument> {
     }
 }
 
+class Page{
+    private final String url;
+    private Double pageRank;
+    Page(String url ){
+        this.url = url;
+        this.pageRank = 0.0 ;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Double getPageRank() {
+        return pageRank;
+    }
+
+    public void setPageRank(Double pageRank) {
+        this.pageRank = pageRank;
+    }
+}
 
 
 public class Ranker {
 
-    Map<String, Integer> documentFrequencies; //term -> no documents containing it
-    Integer totalNumberOfDocuments;
+    private Map<String, Integer> documentFrequencies; //term -> no documents containing it
+    private Integer totalNumberOfDocuments;
+
+
+    private Map<String , Page> pages = new HashMap<>();
+
+    public void setDocumentFrequencies(Map<String ,Integer> documentFrequencies){
+        this.documentFrequencies=documentFrequencies;
+    }
+
+    public void setTotalNumberOfDocuments(Integer totalNumberOfDocuments){
+        this.totalNumberOfDocuments = totalNumberOfDocuments;
+    }
+
+    public void rankPages() throws FileNotFoundException {
+        Map<String , ArrayList<String>> pagesGraph = new Gson().fromJson(new FileReader("./src/main/resources/crawler-output.json"),
+                new TypeToken<Map<String,Object>>() {}.getType());
+        Map<Page,List<Page>>inboundLinks = new HashMap<>();
+        Map<Page,Integer>outboundCount = new HashMap<>();
+
+
+        //construct the graph
+        for(Map.Entry<String ,  ArrayList<String>> entry : pagesGraph.entrySet()){
+            Page pageLinkFrom = pages.get(entry.getKey());
+            if(pageLinkFrom==null) {
+                pageLinkFrom = new Page(entry.getKey());
+                pages.put(entry.getKey(), pageLinkFrom);
+            }
+            outboundCount.put(pageLinkFrom,entry.getValue().size());
+            for(String url : entry.getValue()){
+
+                Page pageLinkTo = pages.get(url);
+                if(pageLinkTo==null){
+                    pageLinkTo = new Page(url);
+                    pages.put(url,pageLinkTo);
+                }
+                if(inboundLinks.get(pageLinkTo)!=null)
+                    inboundLinks.get(pageLinkTo).add(pageLinkFrom);
+                else{
+                    List<Page> list = new ArrayList<>();
+                    list.add(pageLinkFrom);
+                    inboundLinks.put(pageLinkTo,list);
+                }
+
+            }
+        }
+
+
+    }
 
     public List<ScoredDocument> rankDocument(List<String> queryTerms, List<Document> documents) {
 
