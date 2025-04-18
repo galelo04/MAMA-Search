@@ -9,6 +9,8 @@ import static java.util.Map.entry;
 public class Main {
     public static void main(String[] args) {
 
+
+
         Document doc1 = new Document(
                 "doc1",
                 6,
@@ -63,9 +65,13 @@ public class Main {
         int totalNumberOfDocuments = documents.size();
 
         // Initialize Ranker
-        Ranker ranker = new Ranker();
-        ranker.setDocumentFrequencies( documentFrequencies);
-        ranker.setTotalNumberOfDocuments(totalNumberOfDocuments);
+        Ranker ranker = new Ranker(totalNumberOfDocuments,documentFrequencies);
+
+        try {
+            ranker.rankPages();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
 
         // Rank documents
         List<ScoredDocument> rankedDocuments = ranker.rankDocument(queryTerms, documents);
@@ -76,11 +82,6 @@ public class Main {
         }
 
 
-        try {
-            ranker.rankPages();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
 
     }
 }
