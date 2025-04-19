@@ -53,7 +53,7 @@ public class RobotsTxtParser {
             }
 
             String robotsContent = content.toString();
-            robotsCache.put(robotsUrl, robotsContent.isEmpty() ? null : robotsContent);
+            robotsCache.put(robotsUrl, robotsContent.isEmpty() ? "" : robotsContent);
             return robotsContent;
 
         } catch (IOException e) {
