@@ -7,14 +7,8 @@ import java.util.*;
 import org.jsoup.nodes.Document;
 
 public class VisitedSet {
-    private static Set<String> visitedUrls;
-    private static Set<String> visitedPages;
-
-    public VisitedSet() {
-        visitedPages = new HashSet<>();
-        visitedUrls = new HashSet<>();
-    }
-
+    private static Set<String> visitedUrls = new HashSet<>();
+    private static Set<String> visitedPages = new HashSet<>();
     // Adds a normalized URL to the visited set
     public static void addVisitedUrl(String url) {
         String normalizedUrl = URLNormalizer.normalize(url);
