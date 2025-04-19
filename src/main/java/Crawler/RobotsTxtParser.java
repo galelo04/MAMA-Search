@@ -57,7 +57,7 @@ public class RobotsTxtParser {
             return robotsContent;
 
         } catch (IOException e) {
-            robotsCache.put(baseUrl, "");
+            robotsCache.put(robotsUrl, "");
             System.err.println("Error fetching robots.txt: " + e.getMessage());
             e.printStackTrace();
             return null;
