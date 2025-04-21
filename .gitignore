@@ -48,4 +48,6 @@ Thumbs.db
 
 ./src/main/resources/crawler-output.json
 
+# node modules
+/node_modules/
 
