@@ -19,12 +19,12 @@ public class URLFrontier {
 
     // Adds a URL to the queue in a thread-safe manner
     public void addURL(String url) {
-        if (queue.size() >= maxSize) {
-            return;
-        }
         String normalizedUrl = URLNormalizer.normalize(url);
 
         synchronized (queue) {
+            if (queue.size() >= maxSize) {
+                return;
+            }
             queue.add(normalizedUrl);
         }
     }
