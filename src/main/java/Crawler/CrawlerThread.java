@@ -121,7 +121,12 @@ public class CrawlerThread implements Runnable {
         while (true) {
             String url = frontier.getNextURL();
             if (url == null) {
-                continue; // Exit if no more URLs in the frontier
+                try {
+                    Thread.sleep(100); // Prevent busy-wait loop
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break; // Exit if the thread is interrupted
+                }
             }
 
             processUrl(url);
