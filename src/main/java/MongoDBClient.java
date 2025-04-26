@@ -10,7 +10,12 @@ import org.bson.Document;
 
 public class MongoDBClient {
     private static MongoClient mongoClient = null;
-    private static final String CONNECTION_STRING = "mongodb+srv://alieldinalaa04:LjKUpVEseyY5qven@apt.kz2tkqr.mongodb.net/";
+    private static final String CONNECTION_STRING = System.getenv("MONGO_CONNECTION_STRING");
+    static {
+        if (CONNECTION_STRING == null || CONNECTION_STRING.isEmpty()) {
+            throw new IllegalStateException("Environment variable MONGO_CONNECTION_STRING is not set or is empty.");
+        }
+    }
     private static final String DATABASE_NAME = "test";
 
     private MongoDBClient() {}
