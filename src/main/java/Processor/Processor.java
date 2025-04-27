@@ -92,7 +92,9 @@ public class Processor {
             Document query = new Document("word", word);
             Document doc = collection1.find(query).first();
             System.out.println("got rel docs " + doc);
-            relevantDocuments.add(doc);
+            if (doc != null) {
+                relevantDocuments.add(doc);
+            }
 //            if (doc != null) {
 //                String url = doc.containsKey("url") ? doc.getString("url") : null;
 //                Double score = doc.containsKey("score") ? doc.getDouble("score") : null;
