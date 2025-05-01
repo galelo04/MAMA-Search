@@ -3,11 +3,12 @@ package Processor;
 import DBClient.MongoDBClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+import org.tartarus.snowball.ext.englishStemmer;
+
 import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
-import org.bson.Document;
-//import org.tartarus.snowball.ext.porterStemmer;
-import org.tartarus.snowball.ext.englishStemmer;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +23,9 @@ public class Processor {
     private String [] quotedParts;
     private String [] operators;
     private final MongoCollection<Document> collection1;
+    private final MongoCollection<Document> collection2;
     private static final String COLLECTION1_NAME = "inverted_index";
+    private static final String COLLECTION2_NAME = "search_queries";
 
     private static final Set<String> stopWords = new HashSet<>(Arrays.asList(
             "i", "me", "my", "myself", "we", "our", "ours", "ourselves",
@@ -55,6 +58,7 @@ public class Processor {
         }
         MongoDatabase database = MongoDBClient.getDatabase();
         this.collection1 = database.getCollection(COLLECTION1_NAME);
+        this.collection2 = database.getCollection(COLLECTION2_NAME);
 
         // Pre-warm MongoDB connection with ping operation
         try {
@@ -87,50 +91,31 @@ public class Processor {
         this.operators = operators;
     }
 
-    private static boolean isStopWord(String word) {
-        return stopWords.contains(word.toLowerCase());
+    public List<String> getSuggestions() {
+        return Objects.requireNonNull(collection2.find().first()).getList("queries", String.class);
     }
 
-    public String[] tokenizeAndStem(String input) {
-        String[] tokens = tokenizer.tokenize(input);
-        ArrayList<String> filteredTokens = new ArrayList<>();
-        for (String token : tokens) {
-            token = token.toLowerCase();
-            if (!isStopWord(token)) {
-                filteredTokens.add(token);
-            }
-        }
-        String[] stemmedTokens = new String[filteredTokens.size()];
-        for (int i = 0; i < filteredTokens.size(); i++) {
-            String token = filteredTokens.get(i);
-            stemmedTokens[i] = stem(token);
-//            System.out.println("After stemming: " + stemmedTokens[i]);
-        }
-        return stemmedTokens;
+    public void insertSearchQuery(String query) {
+        if(query.startsWith("query="))
+            query = query.substring(6);
+        Document filter = new Document();
+        Document update = new Document("$addToSet", new Document("queries", query));
+
+        collection2.updateOne(filter, update);
     }
 
     public ArrayList<Document> getRelevantDocuments() {
         String[] words = tokenizeAndStem(searchQuery);
         ArrayList<Document> relevantDocuments = new ArrayList<>();
         for(String word : words) {
-            System.out.println("getting rel docs for word: " + word);
             Document query = new Document("word", word);
             Document doc = collection1.find(query).first();
-            System.out.println("got rel docs " + doc);
             if (doc != null) {
-                relevantDocuments.add(doc);
+                List<Document> occurrences = doc.containsKey("urls") ?
+                        doc.getList("urls", Document.class) :
+                        new ArrayList<>();
+                relevantDocuments.addAll(occurrences);
             }
-//            if (doc != null) {
-//                String url = doc.containsKey("url") ? doc.getString("url") : null;
-//                Double score = doc.containsKey("score") ? doc.getDouble("score") : null;
-//
-//                if (url != null && score != null) {
-//                    QueryDocument queryDoc = new QueryDocument(url, word, score);
-//                    relevantDocuments.add(queryDoc);
-//                } else {
-//                    System.out.println("Skipping document for word '" + word + "': missing or null fields (url: " + url + ", score: " + score + ")");
-//                }
-//            }
         }
         return relevantDocuments;
     }
@@ -144,7 +129,6 @@ public class Processor {
             for (String word : words) {
                 Document query = new Document("word", word);
                 Document doc = collection1.find(query).first();
-//                System.out.println("got rel docs " + doc);
                 if (doc != null) {
                     List<Document> occurrences = doc.containsKey("urls") ?
                             doc.getList("urls", Document.class) :
@@ -158,7 +142,7 @@ public class Processor {
                     }
                 }
             }
-//            System.out.println("mp size: " + mp.size());
+
             for (String url : mp.keySet()) {
                 List<Document> occurrences = mp.get(url);
                 if (occurrences.size() == words.length) {
@@ -171,7 +155,6 @@ public class Processor {
                             }
                             scr /= occurrences.size();
                             quoteDocuments.add(new Document("url", url).append("score", scr));
-//                            System.out.println("url: " + url);
                             break;
                         }
                     }
@@ -240,5 +223,26 @@ public class Processor {
         stemmer.setCurrent(text);
         stemmer.stem();
         return stemmer.getCurrent();
+    }
+
+    private static boolean isStopWord(String word) {
+        return stopWords.contains(word.toLowerCase());
+    }
+
+    private String[] tokenizeAndStem(String input) {
+        String[] tokens = tokenizer.tokenize(input);
+        ArrayList<String> filteredTokens = new ArrayList<>();
+        for (String token : tokens) {
+            token = token.toLowerCase();
+            if (!isStopWord(token)) {
+                filteredTokens.add(token);
+            }
+        }
+        String[] stemmedTokens = new String[filteredTokens.size()];
+        for (int i = 0; i < filteredTokens.size(); i++) {
+            String token = filteredTokens.get(i);
+            stemmedTokens[i] = stem(token);
+        }
+        return stemmedTokens;
     }
 }

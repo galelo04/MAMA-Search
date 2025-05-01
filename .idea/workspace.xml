@@ -6,6 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="385c40be-58ed-468d-b8bc-26b8470f9b1d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mama-search/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/mama-search/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mama-search/src/components/SearchBar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/mama-search/src/components/SearchBar.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/PhraseSearcher/PhraseSearcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/PhraseSearcher/PhraseSearcher.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/Processor/Processor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Processor/Processor.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/Server/Api.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Server/Api.java" afterDir="false" />
@@ -52,30 +54,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.Api.executor&quot;: &quot;Run&quot;,
-    &quot;Application.ExampleUsage.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestingMain.executor&quot;: &quot;Run&quot;,
-    &quot;Application.main.executor&quot;: &quot;Run&quot;,
-    &quot;Application.mainfortest.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/Mostafa/MAMA_Search/MAMA-Search/pom.xml&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.Api.executor": "Run",
+    "Application.ExampleUsage.executor": "Run",
+    "Application.TestingMain.executor": "Run",
+    "Application.main.executor": "Run",
+    "Application.mainfortest.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/Mostafa/MAMA_Search/MAMA-Search/pom.xml",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Application.Api">
     <configuration name="Api" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="Server.Api" />
@@ -161,7 +163,8 @@
       <workItem from="1746009938623" duration="4762000" />
       <workItem from="1746017594590" duration="644000" />
       <workItem from="1746019775327" duration="2000" />
-      <workItem from="1746048616218" duration="6082000" />
+      <workItem from="1746048616218" duration="6574000" />
+      <workItem from="1746089815143" duration="10892000" />
     </task>
     <servers />
   </component>
