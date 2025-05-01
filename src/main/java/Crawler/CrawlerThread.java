@@ -25,7 +25,7 @@ public class CrawlerThread implements Runnable {
     private static AtomicInteger pageCount = new AtomicInteger(0);
     private static AtomicInteger id = new AtomicInteger(-1);
     public static final int maxPages = 200;
-    private static final int saving_frequency = 10; // Save every 1000 pages
+    private static final int saving_frequency = 10; // Save every 10 pages
     public final String statesDir;
 
     CrawlerThread(VisitedSet vs, RobotsTxtParser robotsTxtParser, URLFrontier frontier, MongoDBConnection mongoDBConnection, int crawlDelay) {
