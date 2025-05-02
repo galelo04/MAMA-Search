@@ -1,6 +1,7 @@
 package Processor;
 
 import DBClient.MongoDBClient;
+import com.mamasearch.Utils.ProcessorData;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import opennlp.tools.tokenize.TokenizerME;
@@ -109,7 +110,7 @@ public class Processor {
         return stemmedTokens;
     }
 
-    public ArrayList<Document> getRelevantDocuments() {
+    public ProcessorData getRelevantDocuments() {
         String[] words = tokenizeAndStem(searchQuery);
         ArrayList<Document> relevantDocuments = new ArrayList<>();
         for(String word : words) {
@@ -120,6 +121,7 @@ public class Processor {
             if (doc != null) {
                 relevantDocuments.add(doc);
             }
+
 //            if (doc != null) {
 //                String url = doc.containsKey("url") ? doc.getString("url") : null;
 //                Double score = doc.containsKey("score") ? doc.getDouble("score") : null;
@@ -132,10 +134,10 @@ public class Processor {
 //                }
 //            }
         }
-        return relevantDocuments;
+        return new ProcessorData(relevantDocuments,words);
     }
 
-    public ArrayList<Document> getPhraseDocuments() {
+    public ProcessorData getPhraseDocuments() {
         ArrayList<Document> phraseDocuments = new ArrayList<>();
         for (int i = 0; i < quotedParts.length; i++) {
             String[] words = tokenizeAndStem(quotedParts[i]);
@@ -220,7 +222,7 @@ public class Processor {
         for(Document doc : phraseDocuments) {
             System.out.println("phrase doc: " + doc);
         }
-        return phraseDocuments;
+        return new ProcessorData(phraseDocuments,quotedParts); // for now to test needs to be updated with the right  values
     }
 
     private boolean checkPosition(List<Document> positions, Integer position, int length, int i) {
