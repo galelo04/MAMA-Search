@@ -1,22 +1,53 @@
 package com.mamasearch.Ranker;
 
 import DBClient.MongoDBClient;
+import com.mamasearch.Utils.ProcessorData;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 
 import java.util.*;
 
 
 public class Ranker {
-    private final int MAX_ITERATIONS = 50;
-    private Map<String, Integer> documentFrequencies; //term -> no documents containing it
-    private Integer totalNumberOfDocuments;
-    private Map<String, Page> pages = new HashMap<>();
 
-    Ranker(Integer totalNumberOfDocuments, Map<String, Integer> documentFrequencies) {
-        this.totalNumberOfDocuments = totalNumberOfDocuments;
-        this.documentFrequencies = documentFrequencies;
+
+    public List<ScoredDocument> rankDocument(ProcessorData processorData) {
+
+
+        Map<Integer,Double> id_scoreMap = new HashMap<>();
+        ArrayList<Document> documents = processorData.relevantDocuments;
+        List<ScoredDocument> scoredDocumentsList = new ArrayList<ScoredDocument>();
+        for (Document document : documents) {
+            int id = document.getInteger("id");
+            double score = document.getDouble("score");
+            id_scoreMap.put(id, id_scoreMap.getOrDefault(id, 0.0) + score);
+        }
+
+
+        MongoDatabase database = MongoDBClient.getDatabase();
+        String COLLECTION_NAME = "id_data";
+        MongoCollection<org.bson.Document> collection = database.getCollection(COLLECTION_NAME);
+
+        for(Map.Entry<Integer,Double> entry : id_scoreMap.entrySet()) {
+            Document query = new Document("id", entry.getKey());
+            Document doc = collection.find(query).first();
+            ScoredDocument scoredDocument = new ScoredDocument(doc.getString("url"),doc.getString("title"));
+            Double popularityScore = doc.getDouble("popularityScore");
+            double pageRankScore = (popularityScore != null) ? popularityScore : 0.0; // Assign default score if not found
+            double alpha = 0.7, beta = 0.3;
+            double finalScore = alpha * entry.getValue() + beta * pageRankScore;
+            scoredDocument.setScore(finalScore);
+            scoredDocumentsList.add(scoredDocument);
+        }
+
+
+        // generating snippets
+
+
+        Collections.sort(scoredDocumentsList);
+        return scoredDocumentsList;
     }
 
     public static void main(String[] args) {
@@ -48,44 +79,4 @@ public class Ranker {
 
 
     }
-
-    public List<ScoredDocument> rankDocument(List<String> queryTerms, List<Document> documents) {
-
-        double alpha = 0.7, beta = 0.3;
-        List<ScoredDocument> scoredDocumentsList = new ArrayList<ScoredDocument>();
-        for (Document document : documents) {
-            double score = 0.0;
-            for (String queryTerm : queryTerms) {
-                score += calculateTF(document, queryTerm) * calculateIDF(queryTerm);
-            }
-            ScoredDocument s = new ScoredDocument(document);
-            Page page = pages.get(document.getId());
-            double pageRankScore = (page != null) ? page.getPageRank() : 0.0; // Assign default score if not found
-            double finalScore = alpha * score + beta * pageRankScore;
-            s.setScore(finalScore);
-            scoredDocumentsList.add(s);
-        }
-        Collections.sort(scoredDocumentsList);
-        return scoredDocumentsList;
-    }
-
-    public Double calculateTF(Document document, String term) {
-        int titleFreq = document.getTitleTermFreq(term) != null ? document.getTitleTermFreq(term) : 0;
-        int headerFreq = document.getHeaderTermFreq(term) != null ? document.getHeaderTermFreq(term) : 0;
-        int bodyFreq = document.getBodyTermFreq(term) != null ? document.getBodyTermFreq(term) : 0;
-        int urlFreq = document.getURLTermFreq(term) != null ? document.getURLTermFreq(term) : 0;
-
-        double weightedFreq = titleFreq * 10.0 + headerFreq * 5.0 + urlFreq * 5.0 + bodyFreq * 1.0;
-        if (weightedFreq == 0) return 0.0;
-
-        return (1 + Math.log10(weightedFreq)) / document.getTotalTermsCount();
-    }
-
-    public Double calculateIDF(String term) {
-        long docsWithTerm = documentFrequencies.get(term);
-        if (docsWithTerm == 0)
-            return 0.0;
-        return Math.log10((double) totalNumberOfDocuments / docsWithTerm);
-    }
-
 }
