@@ -118,9 +118,13 @@ public class Processor {
             Document query = new Document("word", word);
             Document doc = collection1.find(query).first();
             System.out.println("got rel docs " + doc);
-            if (doc != null) {
-                relevantDocuments.add(doc);
+            List<Document> occurrences = (List<Document>) doc.get("occurrences");
+            if (occurrences != null) {
+                relevantDocuments.addAll(occurrences);
             }
+//            if (doc != null) {
+//                relevantDocuments.add(doc);
+//            }
 
 //            if (doc != null) {
 //                String url = doc.containsKey("url") ? doc.getString("url") : null;
