@@ -3,13 +3,12 @@ package com.mamasearch.Ranker;
 public class ScoredDocument implements Comparable<ScoredDocument> {
     private final String url;
     private final String title;
-    private final String snippet;
+    private  String snippet;
     private Double score;
 
-    ScoredDocument(String url , String title , String snippet) {
+    ScoredDocument(String url , String title ) {
         this.url = url;
         this.title = title;
-        this.snippet = snippet;
         this.score = 0.0;
     }
 
@@ -36,5 +35,9 @@ public class ScoredDocument implements Comparable<ScoredDocument> {
 
     public String getSnippet() {
         return snippet;
+    }
+
+    public void setSnippet(String snippet) {
+        this.snippet = snippet;
     }
 }
