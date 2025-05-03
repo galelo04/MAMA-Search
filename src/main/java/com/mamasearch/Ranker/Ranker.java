@@ -59,30 +59,40 @@ public class Ranker {
 
         public static void main (String[]args){
 
-            MongoDatabase database = MongoDBClient.getDatabase();
-            String COLLECTION_NAME = "url_graph";
-            MongoCollection<org.bson.Document> collection = database.getCollection(COLLECTION_NAME);
+        SnippetGenerator snippetGenerator = new SnippetGenerator();
 
-            Map<Integer, ArrayList<Integer>> pagesGraph = new HashMap<>();
+        String[] arr = {"field","method","iron"};
 
-            FindIterable<org.bson.Document> documents = collection.find();
-            for (org.bson.Document doc : documents) {
-                Integer id = Integer.valueOf(doc.getString("id"));
-                List<Integer> links = doc.getList("extractedUrls", Integer.class);
-                pagesGraph.put(id, new ArrayList<>(links));
-            }
+        long start = System.currentTimeMillis();
+        String s = snippetGenerator.generateSnippet(1,arr,250);
+        long end = System.currentTimeMillis();
 
-
-            PageRanker pageRanker = new PageRanker();
-//        long start = System.nanoTime();
-            long start = System.currentTimeMillis();
-            pageRanker.rank(pagesGraph);
-//        long end = System.nanoTime();
-            long end = System.currentTimeMillis();
-
-            pageRanker.print(pagesGraph);
-
-            System.out.println("Time taken to rank: " + (end - start) + " ms");
+            System.out.println(s);
+            System.out.println("time taken" + (end-start));
+//            MongoDatabase database = MongoDBClient.getDatabase();
+//            String COLLECTION_NAME = "url_graph";
+//            MongoCollection<org.bson.Document> collection = database.getCollection(COLLECTION_NAME);
+//
+//            Map<Integer, ArrayList<Integer>> pagesGraph = new HashMap<>();
+//
+//            FindIterable<org.bson.Document> documents = collection.find();
+//            for (org.bson.Document doc : documents) {
+//                Integer id = Integer.valueOf(doc.getString("id"));
+//                List<Integer> links = doc.getList("extractedUrls", Integer.class);
+//                pagesGraph.put(id, new ArrayList<>(links));
+//            }
+//
+//
+//            PageRanker pageRanker = new PageRanker();
+////        long start = System.nanoTime();
+//            long start = System.currentTimeMillis();
+//            pageRanker.rank(pagesGraph);
+////        long end = System.nanoTime();
+//            long end = System.currentTimeMillis();
+//
+//            pageRanker.print(pagesGraph);
+//
+//            System.out.println("Time taken to rank: " + (end - start) + " ms");
 
 
         }
