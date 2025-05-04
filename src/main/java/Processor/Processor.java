@@ -139,7 +139,6 @@ public class Processor {
     public ArrayList<Document> getRelevantDocuments() {
         allTokens.clear();
         String[] words = stemAll(tokenize(searchQuery));
-        System.out.println(Arrays.toString(words));
         ArrayList<Document> relevantDocuments = new ArrayList<>();
         for(String word : words) {
             Document query = new Document("word", word);

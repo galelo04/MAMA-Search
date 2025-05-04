@@ -22,6 +22,7 @@ function App() {
       }
       const data = await response.json();
       console.log('Data:', data);
+
       setSearchResults({
         documents: data.documents || [],
         time_ms: data.time_ms || 0,

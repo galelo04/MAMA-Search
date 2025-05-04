@@ -7,6 +7,7 @@ import PhraseSearcher.PhraseSearcher.QuoteResult;
 import com.mamasearch.Ranker.Ranker;
 import com.mamasearch.Ranker.ScoredDocument;
 import com.mamasearch.Utils.ProcessorData;
+
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
@@ -47,6 +48,7 @@ public class Api {
                     .replace("\r", "\\r")
                     .replace("\t", "\\t");
         }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
@@ -70,6 +72,7 @@ public class Api {
                         processor.setOperators(res.getOperators());
                         relevantDocuments = processor.getPhraseDocuments();
                     }
+
                     String [] allTokens = processor.getAllTokens();
                     System.out.println("Relevant documents: " + relevantDocuments.size());
                     System.out.println("all tokens: " + allTokens.length);
@@ -81,6 +84,7 @@ public class Api {
                     // PROCESSOR_DATA IS FINE, THE NEXT HAVE PROBLEMS
 //                    List<ScoredDocument> sortedDocuments = ranker.rankDocument(processorData);
 //                    System.out.println("Ranked documents: \n" + sortedDocuments.size());
+
                     // Measure end time and calculate duration in milliseconds
                     long endTime = System.nanoTime();
                     double timeMs = (endTime - startTime) / 1_000_000.0;
@@ -146,6 +150,7 @@ public class Api {
                 StringBuilder responseBuilder = new StringBuilder("{\"suggestions\":[");
                 for (int i = 0; i < suggestions.size(); i++) {
                     responseBuilder.append("\"").append(escapeJson(suggestions.get(i))).append("\"");
+
                     if (i < suggestions.size() - 1) {
                         responseBuilder.append(",");
                     }
