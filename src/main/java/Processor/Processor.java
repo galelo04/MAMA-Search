@@ -159,26 +159,26 @@ public class Processor {
         for (int i = 0; i < quotedParts.length; i++) {
             String[] words = stemAll(tokenize(quotedParts[i]));
             ArrayList<Document> quoteDocuments = new ArrayList<>();
-            Map<String, List<Document>> mp = new HashMap<>();
+            Map<Integer, List<Document>> mp = new HashMap<>();
             for (String word : words) {
                 Document query = new Document("word", word);
                 Document doc = collection1.find(query).first();
                 if (doc != null) {
-                    List<Document> occurrences = doc.containsKey("urls") ?
-                            doc.getList("urls", Document.class) :
+                    List<Document> occurrences = doc.containsKey("ids") ?
+                            doc.getList("ids", Document.class) :
                             new ArrayList<>();
                     for (Document occurrence : occurrences) {
-                        String url = occurrence.getString("url");
-                        if (url != null && !mp.containsKey(url)) {
-                            mp.put(url, new ArrayList<>());
+                        Integer id = occurrence.getInteger("id");
+                        if (id != null && !mp.containsKey(id)) {
+                            mp.put(id, new ArrayList<>());
                         }
-                        mp.get(url).add(occurrence);
+                        mp.get(id).add(occurrence);
                     }
                 }
             }
 
-            for (String url : mp.keySet()) {
-                List<Document> occurrences = mp.get(url);
+            for (Integer id : mp.keySet()) {
+                List<Document> occurrences = mp.get(id);
                 if (occurrences.size() == words.length) {
                     List<Integer> firstWordPos = occurrences.getFirst().getList("positions", Integer.class);
                     for (Integer pos : firstWordPos) {

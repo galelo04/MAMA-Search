@@ -97,17 +97,23 @@ public class Api {
                     // Convert relevantDocuments to JSON array
                     StringBuilder docsJson = new StringBuilder("[");
                     for (int i = 0; i < relevantDocuments.size(); i++) {
-                        docsJson.append(relevantDocuments.get(i).toJson());
+                        ScoredDocument doc = sortedDocuments.get(i);
+                        docsJson.append(String.format(
+                                "{\"title\":\"%s\",\"url\":\"%s\",\"snippet\":\"%s\"}",
+                                escapeJson(doc.getTitle()),
+                                escapeJson(doc.getUrl()),
+                                escapeJson(doc.getSnippet())
+                        ));
                         if (i < relevantDocuments.size() - 1) {
                             docsJson.append(",");
                         }
                     }
                     docsJson.append("]");
 
-                    // Build response with documents and time
+
                     String response = String.format(
-                            "{\"documents\":%s, \"time_ms\":%.2f}",
-                            docsJson, timeMs
+                            "{\"time\":%.2f,\"data\":%s}",
+                            timeMs, docsJson
                     );
 
                     sendResponse(exchange, 200, response);
