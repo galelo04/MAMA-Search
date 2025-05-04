@@ -82,8 +82,8 @@ public class Api {
                     System.out.println("ProcessorData: " + processorData.relevantDocuments.size());
                     System.out.println("ProcessorData: " + processorData.words.length);
                     // PROCESSOR_DATA IS FINE, THE NEXT HAVE PROBLEMS
-//                    List<ScoredDocument> sortedDocuments = ranker.rankDocument(processorData);
-//                    System.out.println("Ranked documents: \n" + sortedDocuments.size());
+                    List<ScoredDocument> sortedDocuments = ranker.rankDocument(processorData);
+                    System.out.println("Ranked documents: \n" + sortedDocuments.size());
 
                     // Measure end time and calculate duration in milliseconds
                     long endTime = System.nanoTime();
