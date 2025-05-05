@@ -24,7 +24,7 @@ public class CrawlerThread implements Runnable {
     private final String userAgent;
     private static AtomicInteger pageCount = new AtomicInteger(0);
     private static AtomicInteger id = new AtomicInteger(-1);
-    public static final int maxPages = 500;
+    public static final int maxPages = 6000;
     private static final int saving_frequency = 10; // Save every 10 pages
     public final String statesDir;
     private static AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -155,14 +155,9 @@ public class CrawlerThread implements Runnable {
         pageCount.set(count);
     }
 
-    private void saveStates (int id) {
-        if (id % saving_frequency == 0) {
-            visitedSet.serialize(statesDir + "visited_set.ser");
-            frontier.serialize(statesDir + "frontier.ser");
-            robotsTxtParser.serialize(statesDir + "robots_cache.ser");
-        }
+    public static void setId(int id) {
+        CrawlerThread.id.set(id);
     }
-
     public static void setShuttingDown(boolean value) {
         isShuttingDown.set(value);
     }
