@@ -175,28 +175,84 @@ public class SnippetGenerator {
         return candidates;
     }
 
-    /**
-     * Finds the best candidate snippet based on scoring
-     */
+    private static class ScoreInfo {
+        int uniqueTermsCount = 0;
+        int firstTermPos = -1;
+        int lastTermPos = -1;
+    }
+
+    // OPTIMIZED version - called by findBestCandidate
+    private ScoreInfo calculateScoreInfo(String windowText, Set<String> normalizedQueryTerms, Pattern termPattern) {
+        ScoreInfo info = new ScoreInfo();
+        if (termPattern == null || windowText == null || windowText.isEmpty()) {
+            return info;
+        }
+
+        Set<String> foundTerms = new HashSet<>();
+        Matcher matcher = termPattern.matcher(windowText);
+        int currentFirst = -1;
+        int currentLast = -1;
+
+        while (matcher.find()) {
+            int matchStart = matcher.start();
+            if (currentFirst == -1) {
+                currentFirst = matchStart; // Found the first one
+            }
+            currentLast = matchStart; // Keep track of the latest one found
+
+            String matchedTerm = matcher.group(1);
+            String normalizedMatch = normalizeToken(matchedTerm);
+            if (normalizedQueryTerms.contains(normalizedMatch)) {
+                foundTerms.add(normalizedMatch);
+            }
+        }
+
+        info.uniqueTermsCount = foundTerms.size();
+        info.firstTermPos = currentFirst;
+        info.lastTermPos = currentLast;
+        return info;
+    }
+
+    // Modified findBestCandidate to use ScoreInfo
     private CandidateSnippet findBestCandidate(List<CandidateSnippet> candidates,
                                                Set<String> normalizedQueryTerms,
                                                Pattern termPattern,
                                                int targetLength) {
         if (candidates.isEmpty()) {
-            return null;
+            return null; // Or return a default empty candidate
         }
 
-        CandidateSnippet bestCandidate = null;
+        CandidateSnippet bestCandidate = candidates.get(0); // Start with the first
         double maxScore = -1.0;
 
         for (CandidateSnippet candidate : candidates) {
-            double score = calculateScore(candidate.text, normalizedQueryTerms, termPattern, targetLength);
-            if (score > maxScore) {
-                maxScore = score;
+            ScoreInfo scoreInfo = calculateScoreInfo(candidate.text, normalizedQueryTerms, termPattern);
+
+            // Calculate final score based on ScoreInfo
+            double coverageScore = scoreInfo.uniqueTermsCount * COVERAGE_WEIGHT;
+            double proximityScore = 0.0;
+            if (scoreInfo.uniqueTermsCount > 1 && scoreInfo.firstTermPos != -1 && scoreInfo.lastTermPos != -1) {
+                int span = scoreInfo.lastTermPos - scoreInfo.firstTermPos;
+                proximityScore = Math.max(0.0, (double)targetLength - span) * PROXIMITY_WEIGHT;
+            } else if (scoreInfo.uniqueTermsCount == 1) {
+                proximityScore = SINGLE_TERM_BONUS;
+            }
+
+            // Add simple readability check from previous code if desired
+            double readabilityScore = 0.0;
+            // ... (calculate readabilityScore based on candidate.text) ...
+
+            double currentScore = coverageScore + proximityScore + readabilityScore;
+
+            if (currentScore > maxScore) {
+                maxScore = currentScore;
                 bestCandidate = candidate;
             }
         }
-
+        // Handle case where no candidate scored > -1.0 (e.g., if all had 0 terms)
+        if (bestCandidate == null && !candidates.isEmpty()){
+            return candidates.get(0); // Or some other default
+        }
         return bestCandidate;
     }
 
