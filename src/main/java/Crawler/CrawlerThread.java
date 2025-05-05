@@ -108,7 +108,7 @@ public class CrawlerThread implements Runnable {
         try {
             // Increase timeout values (in milliseconds)
             return Jsoup.connect(url)
-                    .timeout(5000)          // Connect timeout
+                    .timeout(1000)          // Connect timeout
                     .maxBodySize(1024 * 1024) // Max body size (1MB)
                     .followRedirects(true)
                     .userAgent(userAgent)
