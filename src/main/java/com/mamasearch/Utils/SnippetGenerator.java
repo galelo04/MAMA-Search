@@ -1,8 +1,5 @@
 package com.mamasearch.Utils;
 
-import com.mamasearch.Utils.CandidateSnippet;
-import com.mamasearch.Utils.TokenInfo;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,14 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
-
 public class SnippetGenerator {
     // Cache for frequently accessed files
-    public SnippetGenerator(){
-
-    }
-
     private static final Map<Integer, String> FILE_CACHE = new ConcurrentHashMap<>();
 
     // Reusable patterns
@@ -33,6 +24,28 @@ public class SnippetGenerator {
     private static final double PROXIMITY_WEIGHT = 10.0;
     private static final double SINGLE_TERM_BONUS = 5.0;
 
+    // Inner classes for data structure
+    private static class TokenInfo {
+        final String normalizedText;
+        final int startCharOffset;
+        final int endCharOffset;
+
+        TokenInfo(String normalizedText, int startCharOffset, int endCharOffset) {
+            this.normalizedText = normalizedText;
+            this.startCharOffset = startCharOffset;
+            this.endCharOffset = endCharOffset;
+        }
+    }
+
+    private static class CandidateSnippet {
+        final String text;
+        final int startOffset;
+
+        CandidateSnippet(String text, int startOffset) {
+            this.text = text;
+            this.startOffset = startOffset;
+        }
+    }
 
     /**
      * Generates a snippet from a file containing the query terms.
@@ -62,27 +75,17 @@ public class SnippetGenerator {
         // Compile pattern once for reuse
         Pattern termPattern = compileTermPattern(normalizedQueryTerms);
 
-        // Tokenize text with character offsets
-        List<TokenInfo> allTokens = tokenizeWithOffsets(plainText);
+        // Generate first candidate snippet based on first occurrence of query term
+        CandidateSnippet firstCandidate = generateFirstCandidateSnippet(
+                plainText, normalizedQueryTerms, termPattern, targetLength);
 
-        // Find positions of query terms
-        Map<String, List<Integer>> termTokenIndices = findTermTokenIndices(allTokens, normalizedQueryTerms);
-
-        // No terms found
-        if (termTokenIndices.isEmpty()) {
+        // If first candidate generation strategy didn't yield results, use default
+        if (firstCandidate.text.isEmpty()) {
             return getDefaultSnippet(plainText, targetLength);
         }
 
-        // Generate and score candidate snippets
-        List<CandidateSnippet> candidates = generateCandidates(plainText, termTokenIndices, allTokens, targetLength);
-        CandidateSnippet bestCandidate = findBestCandidate(candidates, normalizedQueryTerms, termPattern, targetLength);
-
-        // Refine snippet boundaries to align with sentences
-        String refinedSnippet = refineBoundaries(plainText, bestCandidate.startOffset,
-                bestCandidate.text.length(), targetLength);
-
-        // Add highlighting to query terms
-        return addHighlighting(refinedSnippet, termPattern);
+        // Add highlighting to query terms and return
+        return addHighlighting(firstCandidate.text, termPattern);
     }
 
     /**
@@ -402,6 +405,126 @@ public class SnippetGenerator {
         }
 
         return windowText.toString();
+    }
+
+    /**
+     * Generates the first candidate snippet by finding the first query term
+     * and extending targetLength/2 before and after it, trying to align with paragraph boundaries.
+     *
+     * @param plainText The text to search in
+     * @param normalizedQueryTerms The set of normalized query terms to find
+     * @param termPattern The pattern to match query terms
+     * @param targetLength The target length of the snippet
+     * @return A CandidateSnippet object centered on the first found query term
+     */
+    private CandidateSnippet generateFirstCandidateSnippet(
+            String plainText,
+            Set<String> normalizedQueryTerms,
+            Pattern termPattern,
+            int targetLength) {
+
+        if (plainText == null || plainText.isEmpty() || termPattern == null) {
+            return new CandidateSnippet("", 0);
+        }
+
+        // Find the first occurrence of any query term
+        Matcher matcher = termPattern.matcher(plainText);
+        if (!matcher.find()) {
+            // If no terms found, return a snippet from the beginning
+            return new CandidateSnippet(
+                    plainText.substring(0, Math.min(plainText.length(), targetLength)),
+                    0
+            );
+        }
+
+        // Found a match - get the center position
+        int matchStart = matcher.start();
+        int matchEnd = matcher.end();
+        int centerPos = (matchStart + matchEnd) / 2;
+
+        // Calculate initial window boundaries
+        int halfLength = targetLength / 2;
+        int initialStart = Math.max(0, centerPos - halfLength);
+        int initialEnd = Math.min(plainText.length(), centerPos + halfLength);
+
+        // Find paragraph start (looking backward for double newline or start of text)
+        int paragraphStart = initialStart;
+        for (int i = initialStart; i > Math.max(0, initialStart - 500); i--) {
+            // Check for paragraph break patterns:
+            // 1. Double newline
+            if (i > 0 &&
+                    plainText.charAt(i) == '\n' &&
+                    plainText.charAt(i-1) == '\n') {
+                paragraphStart = i + 1; // Start after the double newline
+                break;
+            }
+            // 2. Newline followed by space/tab (indented paragraph)
+            if (i > 0 &&
+                    plainText.charAt(i-1) == '\n' &&
+                    (plainText.charAt(i) == ' ' || plainText.charAt(i) == '\t')) {
+                paragraphStart = i;
+                break;
+            }
+            // 3. Beginning of text
+            if (i == 0) {
+                paragraphStart = 0;
+                break;
+            }
+        }
+
+        // Find paragraph end (looking forward for double newline or end of text)
+        int paragraphEnd = initialEnd;
+        for (int i = initialEnd; i < Math.min(plainText.length(), initialEnd + 500); i++) {
+            // Check for paragraph end patterns
+            if (i < plainText.length() - 1 &&
+                    plainText.charAt(i) == '\n' &&
+                    plainText.charAt(i+1) == '\n') {
+                paragraphEnd = i;
+                break;
+            }
+            // End of text
+            if (i == plainText.length() - 1) {
+                paragraphEnd = plainText.length();
+                break;
+            }
+        }
+
+        // If the paragraph is too long, constrain it closer to the original window
+        // but ensure we don't cut in the middle of a word
+        if (paragraphEnd - paragraphStart > targetLength * 2) {
+            // Adjust paragraph start if needed
+            if (paragraphStart < initialStart) {
+                // Look for sentence beginning near initialStart
+                for (int i = initialStart; i > Math.max(paragraphStart, initialStart - 200); i--) {
+                    if (i > 0 &&
+                            (plainText.charAt(i-1) == '.' ||
+                                    plainText.charAt(i-1) == '!' ||
+                                    plainText.charAt(i-1) == '?') &&
+                            Character.isWhitespace(plainText.charAt(i))) {
+                        paragraphStart = i;
+                        break;
+                    }
+                }
+            }
+
+            // Adjust paragraph end if needed
+            if (paragraphEnd > initialEnd) {
+                // Look for sentence ending near initialEnd
+                for (int i = initialEnd; i < Math.min(paragraphEnd, initialEnd + 200); i++) {
+                    if (i < plainText.length() &&
+                            (plainText.charAt(i) == '.' ||
+                                    plainText.charAt(i) == '!' ||
+                                    plainText.charAt(i) == '?')) {
+                        paragraphEnd = i + 1; // Include the punctuation
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Create the candidate snippet
+        String snippetText = plainText.substring(paragraphStart, paragraphEnd);
+        return new CandidateSnippet(snippetText, paragraphStart);
     }
 
     /**

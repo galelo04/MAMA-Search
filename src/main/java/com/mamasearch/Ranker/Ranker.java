@@ -5,11 +5,16 @@ import com.mamasearch.Utils.ProcessorData;
 import com.mamasearch.Utils.SnippetGenerator;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 
 import java.util.*;
+
+import static com.mongodb.client.model.Filters.in;
+import static com.mongodb.client.model.Projections.*;
 
 
 public class Ranker {
@@ -20,37 +25,79 @@ public class Ranker {
 
         Map<Integer, Double> id_scoreMap = new HashMap<>();
         ArrayList<Document> documents = processorData.relevantDocuments;
-        List<ScoredDocument> scoredDocumentsList = new ArrayList<ScoredDocument>();
         for (Document document : documents) {
             int id = document.getInteger("id");
             double score = document.getDouble("score");
             id_scoreMap.put(id, id_scoreMap.getOrDefault(id, 0.0) + score);
         }
 
-
+        Set<Integer> relevantDocIds = id_scoreMap.keySet();
+        Map<Integer, Document> docDetailsMap = new HashMap<>();
         MongoDatabase database = MongoDBClient.getDatabase();
         String COLLECTION_NAME1 = "id_data";
+        if (!relevantDocIds.isEmpty()) { // Avoid empty query if map is empty
+            MongoCollection<Document> collection1 = database.getCollection(COLLECTION_NAME1); // Get your collection
 
-        MongoCollection<Document> collection1 = database.getCollection(COLLECTION_NAME1);
+            // Define which fields to retrieve
+            Bson projection = fields(include("id", "popularityScore", "url", "title"), excludeId()); // Exclude MongoDB's default _id if not needed
 
+            // Execute the single query
+            try (MongoCursor<Document> cursor = collection1.find(in("id", relevantDocIds))
+                    .projection(projection)
+                    .iterator()) {
+                // Load results into an in-memory map for fast lookup
+                while (cursor.hasNext()) {
+                    Document doc = cursor.next();
+                    docDetailsMap.put(doc.getInteger("id"), doc);
+                }
+            }
+        }
+
+
+
+        long totalsnippet = 0;
+        long startr = System.currentTimeMillis();
+        List<ScoredDocument> scoredDocumentsList = new ArrayList<>(); // Assuming you have this list
 
         for (Map.Entry<Integer, Double> entry : id_scoreMap.entrySet()) {
-            Document query = new Document("id", entry.getKey());
-            Document doc = collection1.find(query).first();
+            int docId = entry.getKey();
+            double relevanceScore = entry.getValue(); // TF-IDF based score
+
+            // --- Fast Lookup from In-Memory Map ---
+            Document doc = docDetailsMap.get(docId);
+
+            // Handle cases where a doc ID from id_scoreMap might not be in collection1 (optional, depends on data consistency)
+            if (doc == null) {
+                System.err.println("Warning: Details not found for doc ID: " + docId);
+                continue; // Skip this document
+            }
+
             Double popularityScore = doc.getDouble("popularityScore");
-            double pageRankScore = (popularityScore != null) ? popularityScore : 0.0; // Assign default score if not found
-            double alpha = 0.7, beta = 0.3;
-            double finalScore = alpha * entry.getValue() + beta * pageRankScore;
-            // generating snippets
-            int TARGET_LENGTH = 250;
-            SnippetGenerator snippetGenerator = new SnippetGenerator();
+            double pageRankScore = (popularityScore != null) ? popularityScore : 0.0;
+            String url = doc.getString("url");
+            String title = doc.getString("title");
 
-            String snippet = snippetGenerator.generateSnippet(entry.getKey(), processorData.words, TARGET_LENGTH);
+            // --- Calculate Final Score ---
+            double alpha = 0.7, beta = 0.3; // Consider making these constants
+            double finalScore = alpha * relevanceScore + beta * pageRankScore;
 
-            ScoredDocument scoredDocument = new ScoredDocument(doc.getString("url"), doc.getString("title"), snippet, finalScore);
+            // --- Generating Snippets (Consider moving this - see optimization below) ---
+            int TARGET_LENGTH = 250; // Consider making this a constant
+            SnippetGenerator snippetGenerator = new SnippetGenerator(); // Consider creating this once outside the loop
+
+            long start = System.currentTimeMillis();
+            String snippet = snippetGenerator.generateSnippet(docId, processorData.words, TARGET_LENGTH);
+            long end = System.currentTimeMillis();
+            totalsnippet += (end - start);
+
+            // --- Add to results ---
+            ScoredDocument scoredDocument = new ScoredDocument(url, title, snippet, finalScore);
             scoredDocumentsList.add(scoredDocument);
         }
 
+        long endr = System.currentTimeMillis();
+        System.out.println("Total ranking loop time: " + (endr - startr) + " ms");
+        System.out.println("Total snippet generation time (within loop): " + totalsnippet + " ms");
 
         Collections.sort(scoredDocumentsList);
         return scoredDocumentsList;
