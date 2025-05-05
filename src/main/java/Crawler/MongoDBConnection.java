@@ -47,12 +47,16 @@ public class MongoDBConnection {
             urlGraph.insertOne(document);
     }
     public void deleteAllCrawledPages() {
-        crawledData.deleteMany(new Document());
-        System.out.println("Cleared all crawled pages from database");
+        crawledData.drop();
+        // Recreate the collection
+        database.createCollection(crawledDataName);
+        this.crawledData = database.getCollection(crawledDataName);
     }
 
     public void deleteAllUrlGraph() {
-        urlGraph.deleteMany(new Document());
-        System.out.println("Cleared all URL graph data from database");
+        urlGraph.drop();
+        // Recreate the collection
+        database.createCollection(urlGraphName);
+        this.urlGraph = database.getCollection(urlGraphName);
     }
 }
