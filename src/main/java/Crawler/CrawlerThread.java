@@ -27,6 +27,7 @@ public class CrawlerThread implements Runnable {
     public static final int maxPages = 6000;
     private static final int saving_frequency = 10; // Save every 10 pages
     public final String statesDir;
+    private static AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     CrawlerThread(VisitedSet vs, RobotsTxtParser robotsTxtParser, URLFrontier frontier, MongoDBConnection mongoDBConnection, int crawlDelay) {
         this.visitedSet = vs;
@@ -92,8 +93,6 @@ public class CrawlerThread implements Runnable {
             }
         }
 
-        // Save the state of the crawler
-        saveStates(currentId);
     }
 
     private ArrayList<String> extractUrls(Document doc) {
@@ -127,7 +126,8 @@ public class CrawlerThread implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+
+        while (!isShuttingDown.get() && !Thread.currentThread().isInterrupted()) {
             String url = frontier.getNextURL();
             if (url == null) {
                 try {
@@ -163,5 +163,8 @@ public class CrawlerThread implements Runnable {
         }
     }
 
+    public static void setShuttingDown(boolean value) {
+        isShuttingDown.set(value);
+    }
 
 }
